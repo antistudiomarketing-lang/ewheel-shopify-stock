@@ -1,0 +1,61 @@
+name: Sincronizar stock eWheel → Shopify
+
+on:
+  schedule:
+    # De 15 em 15 minutos (UTC). Evita o minuto 0, que é o mais congestionado no GitHub.
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "preview = só mostra; apply = aplica"
+        type: choice
+        options: [preview, apply]
+        default: preview
+      forcar:
+        description: "Ignorar a salvaguarda de muitos zeros de uma vez (só após verificar)"
+        type: boolean
+        default: false
+
+# Nunca correm duas sincronizações em simultâneo.
+concurrency:
+  group: sincronizar-stock
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Sincronizar
+        env:
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+          EWHEEL_API_KEY: ${{ secrets.EWHEEL_API_KEY }}
+          SHOPIFY_LOCATION_NAME: ${{ vars.SHOPIFY_LOCATION_NAME }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.modo }}" = "apply" ]; then ARGS="--apply"; fi
+          if [ "${{ inputs.forcar }}" = "true" ]; then ARGS="$ARGS --forcar"; fi
+          python sincronizar_stock.py $ARGS
+
+      - name: Guardar logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 14
+          if-no-files-found: ignore
