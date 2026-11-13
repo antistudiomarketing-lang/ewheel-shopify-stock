@@ -1,0 +1,17 @@
+# Credenciais — NUNCA enviar para o GitHub
+.env
+*.env
+
+# Dados e registos locais
+data/
+logs/
+*.csv
+teste_stock.txt
+
+# Python
+__pycache__/
+.venv/
+venv/
+
+# Ficheiros temporários
+_to_delete/
