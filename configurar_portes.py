@@ -130,6 +130,8 @@ def main(aplicar):
     erros(r, "perfil geral")
     print("Perfil geral configurado.")
 
+    if not vids:
+        print("Sem trotinetes/bicicletas na loja: perfil separado não é necessário."); return
     nome = "Trotinetes e bicicletas"
     existente = [p for p in perfis if p["name"] == nome]
     zona_grandes = [{"name": "Portugal continental", "countries": [{"code": "PT", "provinces": [{"code": c} for c in continente]}],
