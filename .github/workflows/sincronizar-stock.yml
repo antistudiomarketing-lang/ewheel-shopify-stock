@@ -1,4 +1,4 @@
-name: Sincronizar stock eWheel → Shopify
+name: Sincronizar stock e encomendas eWheel ↔ Shopify
 
 on:
   schedule:
@@ -50,6 +50,19 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.modo }}" = "apply" ]; then ARGS="--apply"; fi
           if [ "${{ inputs.forcar }}" = "true" ]; then ARGS="$ARGS --forcar"; fi
           python sincronizar_stock.py $ARGS
+
+      - name: Encomendas eWheel (enviar novas e atualizar seguimentos)
+        if: always()
+        env:
+          SHOPIFY_SHOP: ${{ secrets.SHOPIFY_SHOP }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+          EWHEEL_API_KEY: ${{ secrets.EWHEEL_API_KEY }}
+          EWHEEL_ENCOMENDAS_DESDE: ${{ vars.EWHEEL_ENCOMENDAS_DESDE }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.modo }}" = "apply" ]; then ARGS="--aplicar"; fi
+          python encomendas_ewheel.py $ARGS
 
       - name: Guardar logs
         if: always()
